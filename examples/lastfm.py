@@ -12,16 +12,17 @@ https://github.com/benfred/bens-blog-code/blob/master/distance-metrics/musicdata
 
 from __future__ import print_function
 
-import logging
 import argparse
+import logging
 import time
 
+import annoy
 import numpy
 import pandas
 from scipy.sparse import coo_matrix
-import annoy
 
 from implicit import alternating_least_squares
+from implicit.nearest_neighbours import bm25_weight
 
 
 def read_data(filename):
@@ -42,23 +43,6 @@ def read_data(filename):
                         data['user'].cat.codes.copy())))
 
     return data, plays
-
-
-def bm25_weight(X, K1=100, B=0.8):
-    """ Weighs each row of the sparse matrix of the data by BM25 weighting """
-    # calculate idf per term (user)
-    X = coo_matrix(X)
-    N = X.shape[0]
-    idf = numpy.log(float(N) / (1 + numpy.bincount(X.col)))
-
-    # calculate length_norm per document (artist)
-    row_sums = numpy.ravel(X.sum(axis=1))
-    average_length = row_sums.mean()
-    length_norm = (1.0 - B) + B * row_sums / average_length
-
-    # weight matrix rows by bm25
-    X.data = X.data * (K1 + 1.0) / (K1 * length_norm[X.row] + X.data) * idf[X.col]
-    return X
 
 
 class TopRelated(object):
@@ -170,4 +154,3 @@ if __name__ == "__main__":
                               use_native=not args.purepython,
                               dtype=numpy.float32 if args.float32 else numpy.float64,
                               cg=args.cg)
-

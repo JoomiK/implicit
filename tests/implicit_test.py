@@ -1,8 +1,10 @@
 from __future__ import print_function
-import unittest
-from scipy.sparse import csr_matrix
-import numpy as np
+
 import math
+import unittest
+
+import numpy as np
+from scipy.sparse import csr_matrix
 
 import implicit
 
@@ -39,6 +41,7 @@ class ImplicitALSTest(unittest.TestCase):
                                                                     use_cg=use_cg,
                                                                     dtype=dtype)
                     check_solution(rows, cols, counts.todense())
+
 
 if __name__ == "__main__":
     unittest.main()

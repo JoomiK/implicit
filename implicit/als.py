@@ -1,9 +1,11 @@
 """ Implicit Alternating Least Squares """
-import numpy as np
-import time
-import os
 import logging
-from . import _implicit
+import os
+import time
+
+import numpy as np
+
+from . import _als
 
 log = logging.getLogger("implicit")
 
@@ -37,9 +39,9 @@ def alternating_least_squares(Cui, factors, regularization=0.01,
 
     Cui, Ciu = Cui.tocsr(), Cui.T.tocsr()
 
-    solver = _implicit.least_squares if use_native else least_squares
+    solver = _als.least_squares if use_native else least_squares
     if use_cg:
-        solver = _implicit.least_squares_cg if use_native else least_squares_cg
+        solver = _als.least_squares_cg if use_native else least_squares_cg
 
     for iteration in range(iterations):
         s = time.time()
@@ -48,7 +50,7 @@ def alternating_least_squares(Cui, factors, regularization=0.01,
         log.debug("finished iteration %i in %s", iteration, time.time() - s)
 
         if calculate_training_loss:
-            loss = _implicit.calculate_loss(Cui, X, Y, regularization, num_threads)
+            loss = _als.calculate_loss(Cui, X, Y, regularization, num_threads)
             log.debug("loss at iteration %i is %s", iteration, loss)
 
     return X, Y

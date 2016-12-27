@@ -1,5 +1,5 @@
 include implicit/*.pyx
-include implicit/*.c
+include implicit/*.cpp
 include tests/*.py
 include examples/*.py
 include README.md
