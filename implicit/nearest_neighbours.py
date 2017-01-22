@@ -2,10 +2,52 @@ import numpy
 from numpy import bincount, log, sqrt
 from scipy.sparse import coo_matrix
 
-from ._nearest_neighbours import all_pairs_knn  # noqa
+from ._nearest_neighbours import all_pairs_knn
+from .utils import nonzeros
+
+
+class ItemItemRecommender(object):
+    """ Base class for Item-Item Nearest Neighbour recommender models
+    here """
+    def __init__(self):
+        self.similarity = None
+
+    def fit(self, weighted, K):
+        """ Computes and stores the similarity matrix """
+        self.similarity = all_pairs_knn(weighted, K).tocsr()
+
+    def similar_items(self, itemid):
+        """ Returns a list of the most similar other items """
+        return sorted(list(nonzeros(self.similarity, itemid)), key=lambda x: -x[1])
+
+
+class CosineRecommender(ItemItemRecommender):
+    """ An Item-Item Recommender on Cosine distances between items """
+    def fit(self, counts, K):
+        # cosine distance is just the dot-product of a normalized matrix
+        ItemItemRecommender.fit(self, normalize(counts), K)
+
+
+class TFIDFRecommender(ItemItemRecommender):
+    """ An Item-Item Recommender on TF-IDF distances between items """
+    def fit(self, counts, K):
+        weighted = normalize(tfidf_weight(counts))
+        ItemItemRecommender.fit(self, weighted, K)
+
+
+class BM25Recommender(ItemItemRecommender):
+    """ An Item-Item Recommender on BM25 distance between items """
+    def __init__(self, K1=1.2, B=.75):
+        self.K1 = K1
+        self.B = B
+
+    def fit(self, counts, K):
+        weighted = bm25_weight(counts, self.K1, self.B)
+        ItemItemRecommender.fit(self, weighted, K)
 
 
 def tfidf_weight(X):
+    """ Weights a Sparse Matrix by TF-IDF Weighted """
     X = coo_matrix(X)
 
     # calculate IDF
@@ -14,6 +56,14 @@ def tfidf_weight(X):
 
     # apply TF-IDF adjustment
     X.data = sqrt(X.data) * idf[X.col]
+    return X
+
+
+def normalize(X):
+    """ equivalent to scipy.preprocessing.normalize on sparse matrices
+    , but lets avoid another depedency just for a small utility function """
+    X = coo_matrix(X)
+    X.data = X.data / sqrt(bincount(X.row, X.data ** 2))[X.row]
     return X
 
 
@@ -33,13 +83,3 @@ def bm25_weight(X, K1=100, B=0.8):
     # weight matrix rows by bm25
     X.data = X.data * (K1 + 1.0) / (K1 * length_norm[X.row] + X.data) * idf[X.col]
     return X
-
-
-# TODO: is this function even necessary?
-def get_largest(row, N=10):
-    if N >= row.nnz:
-        best = zip(row.data, row.indices)
-    else:
-        ind = numpy.argpartition(row.data, -N)[-N:]
-        best = zip(row.data[ind], row.indices[ind])
-    return sorted(best, reverse=True)

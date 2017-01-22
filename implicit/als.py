@@ -1,11 +1,11 @@
 """ Implicit Alternating Least Squares """
 import logging
-import os
 import time
 
 import numpy as np
 
 from . import _als
+from .utils import check_open_blas, nonzeros
 
 log = logging.getLogger("implicit")
 
@@ -30,7 +30,7 @@ def alternating_least_squares(Cui, factors, regularization=0.01,
     Returns:
         tuple: A tuple of (row, col) factors
     """
-    _check_open_blas()
+    check_open_blas()
 
     users, items = Cui.shape
 
@@ -113,17 +113,3 @@ def least_squares_cg(Cui, X, Y, regularization, num_threads=0, cg_steps=3):
             rsold = rsnew
 
         X[u] = x
-
-
-def nonzeros(m, row):
-    """ returns the non zeroes of a row in csr_matrix """
-    for index in range(m.indptr[row], m.indptr[row+1]):
-        yield m.indices[index], m.data[index]
-
-
-def _check_open_blas():
-    """ checks to see if using OpenBlas. If so, warn if the number of threads isn't set to 1
-    (causes perf issues) """
-    if np.__config__.get_info('openblas_info') and os.environ.get('OPENBLAS_NUM_THREADS') != '1':
-        log.warn("OpenBLAS detected. Its highly recommend to set the environment variable "
-                 "'export OPENBLAS_NUM_THREADS=1' to disable its internal multithreading")

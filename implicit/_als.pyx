@@ -99,9 +99,11 @@ def least_squares(Cui, floating[:, :] X, floating[:, :] Y, double regularization
                         temp = (confidence - 1) * Y[i, j]
                         axpy(&factors, &temp, &Y[i, 0], &one, A + j * factors, &one)
 
+                err = 0
                 posv("U", &factors, &one, A, &factors, b, &factors, &err)
 
                 # fall back to using a LU decomposition if this fails
+                # TODO: I don't think this works since posv can modify A
                 if err:
                     gesv(&factors, &one, A, &factors, pivot, b, &factors, &err)
 
