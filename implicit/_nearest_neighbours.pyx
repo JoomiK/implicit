@@ -65,8 +65,8 @@ def all_pairs_knn(items, unsigned int K=100, int num_threads=0):
                 index2 = K * i
                 for result in topk.results:
                     rows[index2] = i
-                    cols[index2] = result.second;
-                    values[index2] = result.first;
+                    cols[index2] = result.second
+                    values[index2] = result.first
                     index2 = index2 + 1
 
         finally:
